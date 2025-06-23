@@ -18,6 +18,7 @@ app.post('/users', async (req, res) => {
   const { username, email, password_hash, full_name } = req.body;
 
   try {
+    // Unique email logic added in table only .
     const [result] = await pool.query(
       `INSERT INTO users (username, email, password_hash, full_name)
        VALUES (?, ?, ?, ?)`,
