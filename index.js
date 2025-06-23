@@ -53,23 +53,19 @@ app.get('/users/:email', async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
-});
-
 app.put('/users/update', async (req, res) => {
   const { username, password, email, new_password, full_name } = req.body;
 
   try {
     // 1. Validate presence of username + password
-    if (!username || !password) {
+    if (!email || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    // 2. Fetch user by username
+    // 2. Fetch user by email (user can be fetch by other things)
     const [rows] = await pool.query(
-      `SELECT * FROM users WHERE username = ?`,
-      [username]
+      `SELECT * FROM users WHERE email = ?`,
+      [email]
     );
 
     if (rows.length === 0) {
@@ -87,9 +83,9 @@ app.put('/users/update', async (req, res) => {
     const updates = [];
     const values = [];
 
-    if (email) {
-      updates.push('email = ?');
-      values.push(email);
+    if (username) {
+      updates.push('username = ?');
+      values.push(username);
     }
     if (new_password) {
       updates.push('password= ?');
@@ -104,8 +100,8 @@ app.put('/users/update', async (req, res) => {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    const updateQuery = `UPDATE users SET ${updates.join(', ')} WHERE username = ?`;
-    values.push(username);
+    const updateQuery = `UPDATE users SET ${updates.join(', ')} WHERE email = ?`;
+    values.push(email);
 
     await pool.query(updateQuery, values);
 
@@ -114,4 +110,7 @@ app.put('/users/update', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Update failed' });
   }
+});
+app.listen(3000, () => {
+  console.log('Server running on http://localhost:3000');
 });
