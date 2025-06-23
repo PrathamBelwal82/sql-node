@@ -14,3 +14,4 @@ Table:
 - This is a basic overview for SQL queries + Node.js testing.
 - Basic authentication logic is used. Can be modified.
 - Email field is used for finding the user so not updating the email address for now . The code can be tweaked as per requirements.
+- Most logics like same email or username are added through sql table only using UNIQUE Constraint.
