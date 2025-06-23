@@ -15,7 +15,12 @@ console.log("DB Config:", {
 });
 
 app.post('/users', async (req, res) => {
+  
   const { username, email, password, full_name } = req.body;
+if (!username?.trim() || !email?.trim() || !password?.trim()) {
+    return res.status(400).json({ error: 'Username, email, and password all are required' });
+    //We can add other logics like mix of numbers etc to password.
+  }
 
   try {
     // Unique email logic added in table only .
@@ -24,7 +29,7 @@ app.post('/users', async (req, res) => {
        VALUES (?, ?, ?, ?)`,
       [username, email, password, full_name]
     );
-
+    
     res.status(201).json({ message: 'User created', userId: result.insertId });
   } catch (err) {
     console.error(err);
