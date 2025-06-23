@@ -15,14 +15,14 @@ console.log("DB Config:", {
 });
 
 app.post('/users', async (req, res) => {
-  const { username, email, password_hash, full_name } = req.body;
+  const { username, email, password, full_name } = req.body;
 
   try {
     // Unique email logic added in table only .
     const [result] = await pool.query(
-      `INSERT INTO users (username, email, password_hash, full_name)
+      `INSERT INTO users (username, email, password, full_name)
        VALUES (?, ?, ?, ?)`,
-      [username, email, password_hash, full_name]
+      [username, email, password, full_name]
     );
 
     res.status(201).json({ message: 'User created', userId: result.insertId });
