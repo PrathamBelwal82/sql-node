@@ -58,12 +58,12 @@ app.listen(3000, () => {
 });
 
 app.put('/users/update', async (req, res) => {
-  const { username, old_password, email, new_password, full_name } = req.body;
+  const { username, password, email, new_password, full_name } = req.body;
 
   try {
-    // 1. Validate presence of username + old_password
-    if (!username || !old_password) {
-      return res.status(400).json({ error: 'Username and old_password are required' });
+    // 1. Validate presence of username + password
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
     }
 
     // 2. Fetch user by username
@@ -79,7 +79,7 @@ app.put('/users/update', async (req, res) => {
     const user = rows[0];
 
     // 3. Verify password
-    if (old_password !== user.password) {
+    if (password !== user.password) {
       return res.status(401).json({ error: 'Incorrect password' });
     }
 
