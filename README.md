@@ -8,9 +8,9 @@ Table:
 | `password`   | VARCHAR(255) | NOT NULL                     | User's password                                 |
 | `full_name`  | VARCHAR(255) | NULL                         | Full name of the user                           |
 
+### 📌 Notes
 
-Note:
-1.I am Using curl to test from backend.
-2.It is an basic overview for sql query + nodejs testing.
-3.Basic authentication logics used. Can be modified.
-4.Email is used for finding the user and not changing email address for now. Code can tweaked acc. to requirements.
+- I am using curl to test from the backend.
+- This is a basic overview for SQL queries + Node.js testing.
+- Basic authentication logic is used. Can be modified.
+- Email field is used for finding the user so not updating the email address for now . The code can be tweaked as per requirements.
