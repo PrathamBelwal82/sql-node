@@ -10,5 +10,7 @@ Table:
 
 
 Note:
-Using curl to test from backend.
-Basic authentication logics used.
+1.I am Using curl to test from backend.
+2.It is an basic overview for sql query + nodejs testing.
+3.Basic authentication logics used. Can be modified.
+4.Email is used for finding the user and not changing email address for now. Code can tweaked acc. to requirements.
