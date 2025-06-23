@@ -1,5 +1,6 @@
 const express = require('express');
 const pool = require('./db');
+const bcrypt = require('bcrypt'); // 🔐 added
 const app = express();
 
 app.use(express.json());
@@ -15,21 +16,21 @@ console.log("DB Config:", {
 });
 
 app.post('/users', async (req, res) => {
-  
   const { username, email, password, full_name } = req.body;
-if (!username?.trim() || !email?.trim() || !password?.trim()) {
+
+  if (!username?.trim() || !email?.trim() || !password?.trim()) {
     return res.status(400).json({ error: 'Username, email, and password all are required' });
-    //We can add other logics like mix of numbers etc to password.
   }
 
   try {
-    // Unique email logic added in table only .
+    const hashedPassword = await bcrypt.hash(password, 10); // 🔐 hash the password
+
     const [result] = await pool.query(
       `INSERT INTO users (username, email, password, full_name)
        VALUES (?, ?, ?, ?)`,
-      [username, email, password, full_name]
+      [username, email, hashedPassword, full_name]
     );
-    
+
     res.status(201).json({ message: 'User created', userId: result.insertId });
   } catch (err) {
     console.error(err);
@@ -62,12 +63,10 @@ app.put('/users/update', async (req, res) => {
   const { username, password, email, new_password, full_name } = req.body;
 
   try {
-    // 1. Validate presence of username + password
     if (!email || !password) {
-      return res.status(400).json({ error: 'Username and password are required' });
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // 2. Fetch user by email (user can be fetch by other things)
     const [rows] = await pool.query(
       `SELECT * FROM users WHERE email = ?`,
       [email]
@@ -79,12 +78,12 @@ app.put('/users/update', async (req, res) => {
 
     const user = rows[0];
 
-    // 3. Verify password
-    if (password !== user.password) {
+    // 🔐 Compare provided password with hashed password in DB
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
       return res.status(401).json({ error: 'Incorrect password' });
     }
 
-    // 4. Build update dynamically
     const updates = [];
     const values = [];
 
@@ -93,8 +92,9 @@ app.put('/users/update', async (req, res) => {
       values.push(username);
     }
     if (new_password) {
-      updates.push('password= ?');
-      values.push(new_password);
+      const hashedNewPassword = await bcrypt.hash(new_password, 10); // 🔐 rehash
+      updates.push('password = ?');
+      values.push(hashedNewPassword);
     }
     if (full_name) {
       updates.push('full_name = ?');
@@ -116,6 +116,7 @@ app.put('/users/update', async (req, res) => {
     res.status(500).json({ error: 'Update failed' });
   }
 });
+
 app.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
