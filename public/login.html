@@ -93,7 +93,14 @@
       <button id="email-confirm-btn" class="btn" onclick="confirmEmail()">Confirm Email</button>
       <p id="email-error" style="color:red;">Email not found in database.</p>
     </div>
-
+      <button class="btn" onclick="showManualLogin()">Login Manually</button>
+    <!-- Manual Login Form -->
+<form id="manual-login-form" onsubmit="handleManualLogin(event)" style="display:none; margin-top: 20px;">
+  <input type="email" id="manual-email" placeholder="Email" required><br>
+  <input type="password" id="manual-password" placeholder="Password" required><br>
+  <button type="submit" class="btn">Login</button>
+  <p id="manual-login-error" style="color:red; display:none;">Invalid credentials. Try again.</p>
+</form>
     <!-- OTP Input Section -->
     <div id="otp-section">
       <form method="POST" action="/otp-login">
@@ -107,6 +114,41 @@
   </div>
 
   <script>
+    function showManualLogin() {
+    document.getElementById('manual-login-form').style.display = 'block';
+  }
+
+  async function handleManualLogin(event) {
+    event.preventDefault();
+    const email = document.getElementById('manual-email').value;
+    const password = document.getElementById('manual-password').value;
+
+    const body = new URLSearchParams();
+    body.append('grant_type', 'password');
+    body.append('client_id', 'my-client-id');
+    body.append('username', email);
+    body.append('password', password);
+
+    try {
+      const res = await fetch('/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body
+      });
+
+      if (res.ok) {
+        window.location.href = '/profile';
+      } else {
+        document.getElementById('manual-login-error').style.display = 'block';
+      }
+    } catch (err) {
+      document.getElementById('manual-login-error').style.display = 'block';
+      console.error('Login failed:', err);
+    }
+  }
+
     function showEmail() {
       document.getElementById('email-section').style.display = 'block';
     }

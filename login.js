@@ -6,7 +6,7 @@ const RedisStore = require('connect-redis')(session);
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cookieParser = require('cookie-parser');
-
+const OAuth2Server = require('oauth2-server');
 const pool = require('./db');
 const app = express();
 app.use(cookieParser());
@@ -20,8 +20,16 @@ const redisStore = new RedisStore({
   client: redisClient,
   prefix: 'sess:',
 });
-
-
+const Request = OAuth2Server.Request;
+const Response = OAuth2Server.Response;
+const oauthModel = require('./oAuthModel');
+const oauth = new OAuth2Server({
+  model: oauthModel,
+  accessTokenLifetime: 3600,
+   requireClientAuthentication: {
+    password: false
+  }
+});
 // Session middleware
 app.use(session({
   store: redisStore,
@@ -56,7 +64,29 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
+app.post('/token', async (req, res) => {
+  const request = new Request(req);
+  const response = new Response(res);
 
+  try {
+    const token = await oauth.token(request, response);
+    console.log(token.accessToken);
+
+    // Set token in HTTP-only cookie
+    res.cookie('access_token', token.accessToken, {
+      httpOnly: true,
+      secure: false,
+      maxAge: 3600 * 1000,
+      sameSite: 'lax',
+    });
+return res.redirect('/profile');
+    res.json({ message: 'Login successful' });
+    
+  } catch (err) {
+    console.error('Token error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
 app.get('/', (req, res) => {
     //Redis
     /*
@@ -156,6 +186,6 @@ app.get('/logout', (req, res) => {
 
 
 // Start server
-app.listen(3000, () => {
-  console.log('OAuth2.0 backend running on http://localhost:3000');
+app.listen(8000, () => {
+  console.log('OAuth2.0 backend running on http://localhost:8000');
 });
