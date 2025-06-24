@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('./db');
-const bcrypt = require('bcrypt'); // 🔐 added
+const bcrypt = require('bcrypt'); // added
 const app = express();
 
 app.use(express.json());
@@ -23,7 +23,7 @@ app.post('/users', async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10); // 🔐 hash the password
+    const hashedPassword = await bcrypt.hash(password, 10); // hash the password
 
     const [result] = await pool.query(
       `INSERT INTO users (username, email, password, full_name)
@@ -78,7 +78,7 @@ app.put('/users/update', async (req, res) => {
 
     const user = rows[0];
 
-    // 🔐 Compare provided password with hashed password in DB
+    // Compare provided password with hashed password in DB
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Incorrect password' });
@@ -92,7 +92,7 @@ app.put('/users/update', async (req, res) => {
       values.push(username);
     }
     if (new_password) {
-      const hashedNewPassword = await bcrypt.hash(new_password, 10); // 🔐 rehash
+      const hashedNewPassword = await bcrypt.hash(new_password, 10); // rehash
       updates.push('password = ?');
       values.push(hashedNewPassword);
     }
