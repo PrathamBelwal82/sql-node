@@ -7,11 +7,13 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const cookieParser = require('cookie-parser');
 
-
+const pool = require('./db');
 const app = express();
 app.use(cookieParser());
 app.use(express.static('public'));
 
+app.use(express.json()); // ✅ For parsing JSON request bodies
+app.use(express.urlencoded({ extended: true })); 
 // Redis client setup
 const redisClient = new Redis(process.env.REDIS_URL);
 const redisStore = new RedisStore({
@@ -81,16 +83,62 @@ app.get('/auth/google/callback',
     successRedirect: '/profile',
   })
 );
+// Save timestamp in session when page is loaded
+app.use(express.urlencoded({ extended: true }));
+//OTP
+app.post('/otp-login',async(req, res) => {
+  const enteredOtp = req.body.otp;
+  const OTP = '233333';
+
+  if (!req.session.otpStart) {
+    req.session.otpStart = Date.now();
+  } 
+
+  const now = Date.now();
+  if (now - req.session.otpStart > 30000) {
+    req.session.destroy(() => {
+      res.send('<h3>OTP expired. <a href="/">Try again</a></h3>');
+    });
+    return;
+  }
+  if (enteredOtp !== OTP) {
+    return req.session.destroy(() => {
+      res.clearCookie('connect.sid');
+      res.send('<h3>Invalid OTP. <a href="/">Try again</a></h3>');
+    });}
+  if (enteredOtp === OTP) {
+    req.session.loggedIn = true;
+    req.user = { displayName: 'OTP User' };
+    return res.redirect('/profile');
+  }
+});
+
+app.post('/verify-email', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM users WHERE email = ?', [email]);
+
+    if (rows.length > 0) {
+      return res.json({ exists: true });
+    } else {
+      return res.json({ exists: false });
+    }
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).json({ exists: false, error: 'Server error' });
+  }
+});
 
 app.get('/profile', (req, res) => {
   /*if (!req.isAuthenticated()) {
     return res.redirect('/');
   }*/
-  if (!req.cookies[connect.sid]) {
+  if (!req.cookies['connect.sid']) {
   return res.redirect('/');
 }
 
-  res.send(`<h2>Welcome ${req.user.displayName}</h2><pre>${JSON.stringify(req.user, null, 2)}</pre><a href="/logout">Logout</a>`);
+  res.send(`<h2>Welcome</h2><a href="/logout">Logout</a>`);
 });
 
 // Deletes session from redis 

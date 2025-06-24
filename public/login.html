@@ -29,17 +29,129 @@
       text-decoration: none;
       display: inline-block;
       margin-top: 20px;
+      cursor: pointer;
     }
 
     .btn:hover {
       background: #357ae8;
     }
+
+    #otp-section,
+    #email-error {
+      display: none;
+      margin-top: 20px;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 250px;
+      margin-top: 10px;
+    }
+
+    #timer {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    #submit-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #submit-btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    #email-confirm-btn {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Login with Google</h1>
-    <a href="/auth/google" class="btn">Sign in with Google</a>
+    <h1>Login</h1>
+
+    <!-- Google Login Button -->
+    <a href="/auth/google" class="btn">Sign in with Google</a><br>
+
+    <!-- Email + OTP Login -->
+    <button class="btn" onclick="showEmail()">Login with OTP</button>
+
+    <!-- Email Input -->
+    <div id="email-section" style="display:none;">
+      <input type="email" id="email-input" placeholder="Enter your email" required />
+      <br>
+      <button id="email-confirm-btn" class="btn" onclick="confirmEmail()">Confirm Email</button>
+      <p id="email-error" style="color:red;">Email not found in database.</p>
+    </div>
+
+    <!-- OTP Input Section -->
+    <div id="otp-section">
+      <form method="POST" action="/otp-login">
+        <input type="hidden" name="email" id="hidden-email" />
+        <input type="text" name="otp" id="otp-input" placeholder="Enter OTP (233333)" required />
+        <br>
+        <button type="submit" id="submit-btn">Verify</button>
+      </form>
+      <p id="timer">00:30</p>
+    </div>
   </div>
+
+  <script>
+    function showEmail() {
+      document.getElementById('email-section').style.display = 'block';
+    }
+
+    async function confirmEmail() {
+      const email = document.getElementById('email-input').value;
+      const errorEl = document.getElementById('email-error');
+
+      const res = await fetch('/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const result = await res.json();
+
+      if (result.exists) {
+        document.getElementById('hidden-email').value = email;
+        document.getElementById('otp-section').style.display = 'block';
+        errorEl.style.display = 'none';
+        startOtpTimer();
+      } else {
+        errorEl.style.display = 'block';
+      }
+    }
+
+    function startOtpTimer() {
+      const timerEl = document.getElementById('timer');
+      const submitBtn = document.getElementById('submit-btn');
+
+      let seconds = 30;
+      timerEl.textContent = '00:30';
+      submitBtn.disabled = false;
+
+      const countdown = setInterval(() => {
+        seconds--;
+        timerEl.textContent = '00:' + (seconds < 10 ? '0' + seconds : seconds);
+
+        if (seconds <= 0) {
+          clearInterval(countdown);
+          timerEl.textContent = 'OTP expired';
+          submitBtn.disabled = true;
+        }
+      }, 1000);
+    }
+  </script>
 </body>
 </html>
