@@ -47,24 +47,9 @@ app.use(session({
 // Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
+// Save timestamp in session when page is loaded
+app.use(express.urlencoded({ extended: true }));
 
-// Passport config
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: '/auth/google/callback',
-}, (accessToken, refreshToken, profile, done) => {
-  // Save profile or user id here if using DB
-  return done(null, profile);
-}));
-
-passport.serializeUser((user, done) => {
-  done(null, user); // store whole user in session
-});
-
-passport.deserializeUser((user, done) => {
-  done(null, user);
-});
 
 app.post('/login/token', async (req, res) => {
   const request = new Request(req);
@@ -88,6 +73,8 @@ app.post('/login/token', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+
 app.get('/token/details', authenticateRequest, async (req, res) => {
   try {
     const [rows] = await pool.query('SELECT id, email, username, full_name FROM users WHERE email = ?', [req.email]);
@@ -103,6 +90,31 @@ app.get('/token/details', authenticateRequest, async (req, res) => {
   }
 });
 
+app.get('/me', authenticateRequest, (req, res) => {
+  res.json({
+    email: req.email
+  });
+});
+
+
+// Passport config
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: '/auth/google/callback',
+}, (accessToken, refreshToken, profile, done) => {
+  // Save profile or user id here if using DB
+  return done(null, profile);
+}));
+
+passport.serializeUser((user, done) => {
+  done(null, user); // store whole user in session
+});
+
+passport.deserializeUser((user, done) => {
+  done(null, user);
+});
+
 app.get('/', (req, res) => {
     //Redis
     /*
@@ -116,7 +128,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/login.html');
 });
 
-
+//Google login
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] ,
@@ -129,8 +141,6 @@ app.get('/auth/google/callback',
     successRedirect: '/profile',
   })
 );
-// Save timestamp in session when page is loaded
-app.use(express.urlencoded({ extended: true }));
 //OTP
 app.post('/otp-login',async(req, res) => {
   const enteredOtp = req.body.otp;
@@ -157,12 +167,6 @@ app.post('/otp-login',async(req, res) => {
     req.user = { displayName: 'OTP User' };
     return res.redirect('/profile');
   }
-});
-
-app.get('/me', authenticateRequest, (req, res) => {
-  res.json({
-    email: req.email
-  });
 });
 
 app.post('/verify-email', async (req, res) => {
