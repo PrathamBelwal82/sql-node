@@ -16,4 +16,6 @@ Table:
 - Email field is used for finding the user so not updating the email address for now . The code can be tweaked as per requirements.
 - Most logics like same email or username are added through sql table only using UNIQUE Constraint.
 - Used both HTTP request headers and cookies for practice while authorizing OAuth access token.
-- Used redis to store (acess_token,email) and then used email to access user details after middleware authentication. 
+- Used redis to store (acess_token,email) and then used email to access user details after middleware authentication.
+- Token expires automatically after 60 secs until hit again.
+- Token remains same if access is tried before expiry time.
