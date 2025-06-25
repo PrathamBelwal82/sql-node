@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const OAuth2Server = require('oauth2-server');
 const pool = require('./db');
 const app = express();
+const { authenticateRequest } = require('./middleware/authenticateRequest');
 app.use(cookieParser());
 app.use(express.static('public'));
 
@@ -25,7 +26,7 @@ const Response = OAuth2Server.Response;
 const oauthModel = require('./oAuthModel');
 const oauth = new OAuth2Server({
   model: oauthModel,
-  accessTokenLifetime: 3600,
+  accessTokenLifetime: 60,
    requireClientAuthentication: {
     password: false
   }
@@ -64,7 +65,8 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser((user, done) => {
   done(null, user);
 });
-app.post('/token', async (req, res) => {
+
+app.post('/login/token', async (req, res) => {
   const request = new Request(req);
   const response = new Response(res);
 
@@ -79,7 +81,6 @@ app.post('/token', async (req, res) => {
       maxAge: 3600 * 1000,
       sameSite: 'lax',
     });
-return res.redirect('/profile');
     res.json({ message: 'Login successful' });
     
   } catch (err) {
@@ -87,6 +88,21 @@ return res.redirect('/profile');
     res.status(400).json({ error: err.message });
   }
 });
+app.get('/token/details', authenticateRequest, async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT id, email, username, full_name FROM users WHERE email = ?', [req.email]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ user: rows[0] });
+  } catch (err) {
+    console.error('DB error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.get('/', (req, res) => {
     //Redis
     /*
@@ -141,6 +157,12 @@ app.post('/otp-login',async(req, res) => {
     req.user = { displayName: 'OTP User' };
     return res.redirect('/profile');
   }
+});
+
+app.get('/me', authenticateRequest, (req, res) => {
+  res.json({
+    email: req.email
+  });
 });
 
 app.post('/verify-email', async (req, res) => {
