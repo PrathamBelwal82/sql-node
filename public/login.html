@@ -130,7 +130,7 @@
     body.append('password', password);
 
     try {
-      const res = await fetch('/token', {
+      const res = await fetch('/login/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
@@ -139,7 +139,7 @@
       });
 
       if (res.ok) {
-        window.location.href = '/profile';
+        window.location.href = '/me';
       } else {
         document.getElementById('manual-login-error').style.display = 'block';
       }
