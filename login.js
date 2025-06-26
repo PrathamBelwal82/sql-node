@@ -43,6 +43,9 @@ app.use(session({
     secure: false, // set to true if using HTTPS
   }
 }));
+const { producer, connectKafka } = require('./kafka');
+connectKafka();
+
 
 // Initialize passport
 app.use(passport.initialize());
@@ -66,10 +69,43 @@ app.post('/login/token', async (req, res) => {
       maxAge: 3600 * 1000,
       sameSite: 'lax',
     });
+
+    await producer.send({
+      topic: 'login-events',
+      messages: [
+        {
+          value: JSON.stringify({
+            event: 'login',
+            userId: token.user.id, 
+            email: token.user.email, 
+            success: true,
+            timestamp: new Date().toISOString(),
+            ip: req.ip || req.remoteAddress
+          }),
+        },
+      ],
+    });
+
     res.json({ message: 'Login successful' });
     
   } catch (err) {
     console.error('Token error:', err);
+    await producer.send({
+      topic: 'login-events',
+      messages: [
+        {
+          value: JSON.stringify({
+            event: 'login',
+            userId: null,
+            email: req.body.username || req.body.email,
+            success: false,
+            error: err.message,
+            timestamp: new Date().toISOString(),
+            ip: req.ip || req.remoteAddress
+          }),
+        },
+      ],
+    });
     res.status(400).json({ error: err.message });
   }
 });
